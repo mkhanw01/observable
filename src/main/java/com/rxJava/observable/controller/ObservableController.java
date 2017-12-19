@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import rx.Observable;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Created by khan on 12/19/17.
  */
@@ -25,12 +27,36 @@ public class ObservableController {
   }
 
   @RequestMapping(value = "/getAMessageObsAsync")
-  public DeferredResult<Message> messageDeferredResult(){
+  public DeferredResult<Message> messageDeferredResult() {
     Observable<Message> observable = this.observableService.getMessageObservable();
     DeferredResult<Message> deferredResult = new DeferredResult<>(9000l);
-    observable.subscribe(message -> deferredResult.setResult(message), e-> deferredResult
-        .setErrorResult(e));
+    observable.subscribe(message -> deferredResult.setResult(message),
+        e -> deferredResult.setErrorResult(e));
     return deferredResult;
+  }
+
+  @RequestMapping(value = "/getAMessageFutureBlocking")
+  public Message getAMessageFutureBlockingMessage() throws Exception {
+    return this.observableService.getCompletableFuture().get();
+  }
+
+  @RequestMapping(value = "/getAMessageFutureAsync")
+  public DeferredResult<Message> getAMessageFutureAsync() {
+    DeferredResult<Message> deferredResult = new DeferredResult<>(999l);
+    CompletableFuture<Message> completableFuture = this.observableService.getCompletableFuture();
+    completableFuture.whenComplete((res, exe) -> {
+      if (exe != null) {
+        deferredResult.setErrorResult(exe);
+      } else {
+        deferredResult.setResult(res);
+      }
+    });
+    return deferredResult;
+  }
+
+  @RequestMapping(value = "/getQuickMesage")
+  public Message getAFastMessage() {
+    return new Message("fast message");
   }
 
 }
